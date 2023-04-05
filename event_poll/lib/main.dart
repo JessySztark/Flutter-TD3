@@ -5,12 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import '../ui/app_scaffold.dart';
+import 'states/PollsState.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthState(),
-      builder: ((_, __) => const App()),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthState(),
+        ),
+        ChangeNotifierProxyProvider<AuthState, PollsState>(
+          create: (_) => PollsState(),
+          update: (_, authState, pollsState) =>
+              pollsState!..setAuthToken(authState.token),
+        ),
+      ],
+      child: const App(),
     ),
   );
 }

@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../configs.dart';
 import '../models/user.dart';
+import '../result.dart';
 
 class AuthState extends ChangeNotifier {
   AuthState();
@@ -13,8 +14,9 @@ class AuthState extends ChangeNotifier {
   String? _token;
   String? get token => _token;
   bool get isLoggedIn => currentUser != null;
+  String? error;
 
-  Future<User?> login(String username, String password) async {
+  Future<Result<Object, dynamic>> login(String username, String password) async {
     final loginResponse = await http.post(
       Uri.parse('${Configs.baseUrl}/auth/login'),
       headers: {HttpHeaders.contentTypeHeader: 'application/json'},
@@ -35,11 +37,18 @@ class AuthState extends ChangeNotifier {
       if (userResponse.statusCode == HttpStatus.ok) {
         _currentUser = User.fromJson(json.decode(userResponse.body));
         notifyListeners();
-        return _currentUser;
+        return Result.success(_currentUser!);
       }
+      error = 'Une erreur est survenue';
+    } 
+    else {
+      error = loginResponse.statusCode == HttpStatus.badRequest ||
+      loginResponse.statusCode == HttpStatus.unauthorized
+      ? 'Identifiant ou mot de passe incorrect'
+      : 'Une erreur est survenue';
     }
     logout();
-    return null;
+    return Result.failure(error!);
   }
 
   Future<User?> signup(String username, String password) async {
